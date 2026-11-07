@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算法＋直播间，怎么让你忍不住下单？</title>
+<style>
+:root{
+  --orange:#D97101; --gold:#EBB21E; --peach:#F7CA9E;
+  --apricot:#F0DBA4; --cream:#FBEEDE; --bg:#F2F2F2;
+  --ink:#5B3A1A; --ink2:#8A5A22; --white:#FFFDF8;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.7; overflow-x:hidden;
+}
+
+.wrap{max-width:980px;margin:0 auto;padding:0 40px;}
+section{padding:18px 0 24px;}
+/* ===== 通用入场动画 ===== */
+.rv{opacity:0;transform:translateY(34px);transition:opacity .7s ease,transform .7s ease;}
+.rv.on{opacity:1;transform:translateY(0);}
+
+/* ===== 首屏 ===== */
+.hero{min-height:76vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;padding-top:30px;overflow:hidden;}
+.hero-badge{
+  display:inline-block;background:var(--orange);color:#fff;font-weight:800;
+  padding:6px 20px;border-radius:999px;font-size:15px;letter-spacing:2px;
+  box-shadow:0 4px 0 #A85A01;margin-bottom:14px;
+}
+.hero h1{
+  font-size:clamp(30px,6.2vw,58px);font-weight:900;line-height:1.3;color:var(--ink);
+}
+.hero h1 .hl{
+  background:linear-gradient(120deg,var(--orange),var(--gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-sub{
+  margin-top:18px;font-size:clamp(17px,3vw,24px);font-weight:800;color:var(--orange);
+  background:var(--cream);border:2px dashed var(--peach);padding:10px 28px;border-radius:16px;
+}
+.hero-phone{
+  margin-top:22px;width:min(300px,80vw);background:#3A2A18;border-radius:34px;padding:12px;
+  box-shadow:0 20px 40px rgba(217,113,1,.25);position:relative;
+}
+.hero-phone .screen{background:linear-gradient(180deg,#FFF3E0,#FFE0B2);border-radius:24px;padding:16px 14px 20px;overflow:hidden;position:relative;}
+.live-top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);font-weight:700;}
+.live-avatar{width:100%;height:130px;border-radius:16px;background:radial-gradient(circle at 50% 40%,var(--peach),var(--gold));display:flex;align-items:center;justify-content:center;font-size:64px;margin:10px 0;position:relative;}
+.live-tag{
+  position:absolute;background:var(--orange);color:#fff;font-size:13px;font-weight:800;
+  padding:3px 10px;border-radius:999px;animation:bob 1.6s ease-in-out infinite;
+}
+.live-tag.t1{top:8px;left:8px;}
+.live-tag.t2{bottom:8px;right:8px;background:#C62F2F;animation-delay:.5s;}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+.bubble-float{position:absolute;max-width:150px;background:#fff;border:2px solid var(--gold);border-radius:14px;padding:5px 10px;font-size:12px;font-weight:700;color:var(--ink);animation:floatUp 4s linear infinite;}
+.bubble-float.b1{left:6px;top:56px;}
+.bubble-float.b2{right:6px;top:86px;animation-delay:1.6s;}
+.bubble-float.b3{left:22px;top:14px;animation-delay:2.8s;}
+@keyframes floatUp{0%{opacity:0;transform:translateY(16px)}15%{opacity:1}80%{opacity:1}100%{opacity:0;transform:translateY(-26px)}}
+.hero-cta{margin-top:44px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.sparkle{position:absolute;font-size:26px;opacity:.5;animation:spin 7s linear infinite;pointer-events:none;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scroll-tip{margin-top:16px;color:var(--ink2);font-size:14px;font-weight:700;animation:bob2 1.6s infinite;}
+@keyframes bob2{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+/* ===== 幕标题 ===== */
+.act-head{text-align:center;margin-bottom:14px;}
+.act-num{
+  display:inline-flex;align-items:center;gap:10px;background:var(--cream);
+  border:2px solid var(--peach);color:var(--orange);font-weight:900;font-size:16px;
+  padding:4px 18px;border-radius:999px;margin-bottom:10px;letter-spacing:2px;
+}
+.act-head h2{font-size:clamp(26px,4.6vw,40px);font-weight:900;}
+.act-head p{color:var(--ink2);font-size:14px;margin-top:4px;font-weight:600;}
+
+/* ===== 通用卡片 ===== */
+.card{background:var(--white);border-radius:22px;border:2px solid var(--peach);padding:22px 24px;box-shadow:0 6px 0 rgba(217,113,1,.12);}
+.card-title{font-size:21px;font-weight:900;color:var(--orange);display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.big{font-size:clamp(19px,2.8vw,25px);font-weight:900;color:var(--orange);line-height:1.55;}
+.klist{list-style:none;margin-top:8px;}
+.klist li{padding:9px 0 9px 30px;position:relative;font-size:16px;}
+.klist li::before{content:"✦";position:absolute;left:4px;color:var(--gold);font-weight:900;}
+.klist li b{color:var(--orange);}
+.say{
+  position:relative;background:var(--cream);border:2px solid var(--apricot);border-radius:16px;
+  padding:14px 16px;font-size:16px;font-weight:700;margin:12px 0;
+}
+.say::after{
+  content:"";position:absolute;bottom:-12px;left:32px;border:6px solid transparent;border-top-color:var(--apricot);border-left-color:var(--apricot);
+}
+.say .who{color:var(--ink2);font-size:13px;font-weight:800;display:block;margin-bottom:4px;}
+.mega{font-size:clamp(24px,4.4vw,36px);font-weight:900;line-height:1.45;}
+.mega .hl{color:var(--orange);}
+.center{text-align:center;}
+.mt{margin-top:10px;} .mb{margin-bottom:12px;}
+.chip{display:inline-block;background:var(--apricot);color:var(--ink);font-weight:800;font-size:13px;padding:3px 12px;border-radius:999px;margin:3px 4px 3px 0;}
+.chip.hot{background:var(--orange);color:#fff;}
+.chip.danger{background:#C62F2F;color:#fff;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr;} .wrap{padding:0 24px;}}
+
+/* ===== 第一幕 互动手机 ===== */
+.phone-stage{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.mini-phone{width:min(300px,86vw);background:#3A2A18;border-radius:30px;padding:10px;box-shadow:0 14px 30px rgba(0,0,0,.15);}
+.mini-phone .scr{background:#FFF6E8;border-radius:20px;min-height:300px;padding:12px;position:relative;overflow:hidden;}
+.scr-head{font-size:12px;color:var(--ink2);font-weight:800;text-align:center;padding-bottom:8px;border-bottom:2px dashed var(--peach);margin-bottom:10px;}
+.ad-item{
+  background:#fff;border:2px solid var(--peach);border-radius:14px;padding:10px 12px;margin-bottom:10px;
+  display:flex;align-items:center;gap:10px;
+}
+.ad-item .ad-emoji{font-size:28px;}
+.ad-item .ad-txt{font-size:13.5px;font-weight:800;line-height:1.4;}
+.ad-item .ad-tag{font-size:11px;font-weight:800;background:var(--gold);color:#5B3A1A;border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap;}
+.ad-item .ad-tag.hot{background:var(--orange);color:#fff;}
+.js-hide{opacity:0;transform:translateY(16px) scale(.95);pointer-events:none;transition:all .5s cubic-bezier(.34,1.56,.64,1);}
+.js-shown{opacity:1;transform:none;pointer-events:auto;}
+.pop-in{animation:popIn .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.press-btn{
+  background:linear-gradient(120deg,var(--orange),#F0902E);color:#fff;border:none;border-radius:999px;
+  padding:12px 30px;font-size:17px;font-weight:900;cursor:pointer;font-family:inherit;
+  box-shadow:0 5px 0 #A85A01;transition:transform .12s;
+}
+.press-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #A85A01;}
+.press-btn.done{background:var(--gold);color:#5B3A1A;box-shadow:0 5px 0 #C9960F;cursor:default;}
+
+.anx-card{cursor:pointer;transition:transform .2s;}
+.anx-card:hover{transform:translateY(-4px);}
+.anx-card .anx-face{font-size:40px;text-align:center;}
+.anx-card .anx-name{font-weight:900;font-size:17px;color:var(--orange);text-align:center;margin:6px 0 4px;}
+.anx-card .anx-sub{font-size:13.5px;color:var(--ink2);text-align:center;font-weight:600;}
+.anx-reveal{background:var(--cream);border-radius:14px;padding:10px;margin-top:10px;font-size:13.5px;font-weight:700;border:2px dashed var(--gold);}
+.anx-reveal .from{font-size:11.5px;color:var(--ink2);font-weight:800;}
+
+.summary-band{
+  background:linear-gradient(120deg,var(--orange),#F0902E);color:#fff;border-radius:24px;
+  padding:22px 26px;box-shadow:0 8px 0 #A85A01;margin-top:16px;
+}
+.summary-band .big{color:#FFE9B8;}
+.summary-band p{font-size:16px;margin-top:10px;font-weight:600;}
+
+/* ===== 第二幕 翻牌 ===== */
+.flip-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:24px;margin-bottom:6px;}
+.flip-grid .flip-card{grid-column:span 2;}
+.flip-grid .flip-card:nth-child(4){grid-column:2/span 2;}
+@media(max-width:900px){.flip-grid{grid-template-columns:repeat(2,1fr);} .flip-grid .flip-card,.flip-grid .flip-card:nth-child(4){grid-column:auto;}}
+@media(max-width:560px){.flip-grid{grid-template-columns:1fr;}}
+.flip-card{perspective:1200px;height:380px;cursor:pointer;}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.1,.2,1);transform-style:preserve-3d;}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:22px;padding:20px;display:flex;flex-direction:column;}
+.flip-front{background:var(--white);border:2.5px solid var(--gold);justify-content:flex-start;gap:10px;}
+.flip-back{background:linear-gradient(160deg,#C62F2F,#E2574B);color:#fff;transform:rotateY(180deg);border:2.5px solid #8F1F1F;}
+.flip-front .trick-no{font-size:12px;font-weight:900;color:#fff;background:var(--orange);align-self:flex-start;padding:3px 12px;border-radius:999px;}
+.flip-front .trick-name{font-size:23px;font-weight:900;color:var(--orange);margin:10px 0 4px;}
+.flip-front .trick-en{font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:6px;}
+.trick-quote{
+  background:var(--cream);border-radius:14px;padding:12px;font-size:15px;font-weight:800;
+  position:relative;line-height:1.6;
+}
+.trick-quote::before{content:"🎙️";position:absolute;top:-16px;left:12px;font-size:26px;}
+.flip-hint{text-align:center;font-size:12.5px;color:var(--ink2);font-weight:800;margin-top:auto;padding-top:10px;}
+.flip-back .truth-title{font-size:19px;font-weight:900;display:flex;align-items:center;gap:8px;}
+.flip-back p{font-size:15px;font-weight:600;margin-top:12px;line-height:1.75;}
+.flip-back .truth-tag{margin-top:auto;font-size:12.5px;font-weight:800;background:rgba(255,255,255,.2);border-radius:999px;padding:4px 12px;align-self:flex-start;}
+
+/* ===== 第三幕 ===== */
+.late-hero{background:var(--ink);color:var(--cream);border-radius:26px;padding:30px 30px;text-align:center;box-shadow:0 8px 0 #2E1B0C;}
+.late-hero .mega{color:#fff;}
+.late-hero .hl{color:var(--gold);}
+.late-hero p{margin-top:14px;font-size:16px;font-weight:600;color:var(--peach);}
+.box-stage{display:flex;flex-direction:column;align-items:center;margin-top:14px;gap:14px;}
+.parcel{
+  width:220px;height:170px;background:linear-gradient(160deg,#C98A4B,#A86A2E);border-radius:14px;
+  position:relative;cursor:pointer;box-shadow:0 10px 0 #7A4A1C;transition:transform .2s;
+}
+.parcel:hover{transform:translateY(-4px);}
+.parcel .tape{position:absolute;left:0;right:0;top:44%;height:26px;background:rgba(251,238,222,.75);}
+.parcel .label{position:absolute;top:14px;left:16px;background:#FFF9EC;border-radius:8px;padding:6px 12px;font-weight:900;font-size:15px;color:var(--ink);transform:rotate(-4deg);box-shadow:2px 3px 0 rgba(0,0,0,.15);}
+.parcel .lid{position:absolute;left:-8px;right:-8px;top:-26px;height:34px;background:linear-gradient(160deg,#B57A3E,#8F5A24);border-radius:10px;transition:transform .6s;transform-origin:left bottom;}
+.parcel.opened .lid{transform:rotate(-110deg);}
+.parcel .inside{position:absolute;inset:30px 16px 16px;background:#5C3A17;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:46px;opacity:0;transition:opacity .5s .3s;}
+.parcel.opened .inside{opacity:1;}
+.hurdle{
+  background:var(--white);border:2.5px solid var(--orange);border-radius:16px;padding:14px 18px;
+  font-weight:900;font-size:17px;display:flex;align-items:center;gap:10px;box-shadow:0 5px 0 rgba(217,113,1,.25);
+}
+.hurdle .no{background:var(--orange);color:#fff;border-radius:50%;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+
+
+/* ===== 第二幕 插画动画 ===== */
+.illo{height:84px;border-radius:16px;background:linear-gradient(160deg,var(--cream),var(--apricot));display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;position:relative;overflow:hidden;flex-wrap:wrap;padding:0 8px;}
+.illo-emoji{font-size:34px;position:relative;}
+.bob{animation:bob 1.8s ease-in-out infinite;}
+.doc{position:relative;display:inline-block;font-size:34px;}
+.doc .stamp{position:absolute;top:2px;right:-10px;font-style:normal;font-size:15px;font-weight:900;color:#fff;background:#C62F2F;border:2px solid #fff;border-radius:6px;padding:1px 6px;transform:rotate(14deg);animation:stampPulse 1.4s ease-in-out infinite;}
+@keyframes stampPulse{0%,100%{transform:rotate(14deg) scale(1)}50%{transform:rotate(14deg) scale(1.22)}}
+.illo-arrow{font-size:18px;font-weight:900;color:var(--orange);}
+.rag{filter:grayscale(.85) brightness(.85);animation:ragShake 2.4s ease-in-out infinite;}
+@keyframes ragShake{0%,88%,100%{transform:rotate(0)}92%{transform:rotate(-7deg)}96%{transform:rotate(6deg)}}
+.shine{position:relative;}
+.shine::after{content:"✨";position:absolute;top:-12px;right:-14px;font-size:18px;animation:spark 1.6s ease-in-out infinite;}
+@keyframes spark{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.price-old{font-size:19px;font-weight:900;color:var(--ink2);position:relative;}
+.price-old::after{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:3px;background:#C62F2F;border-radius:2px;transform:rotate(-8deg);animation:strike 1.8s ease-in-out infinite;}
+@keyframes strike{0%,100%{transform:rotate(-8deg) scaleX(1)}50%{transform:rotate(-8deg) scaleX(.55)}}
+.price-now{font-size:30px;font-weight:900;color:#C62F2F;animation:priceBounce 1s ease-in-out infinite;}
+@keyframes priceBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.12)}}
+.tear{position:absolute;font-size:20px;top:26px;animation:tearDrop 1.8s ease-in infinite;}
+@keyframes tearDrop{0%{opacity:0;transform:translateY(0)}20%{opacity:1}80%{opacity:1;transform:translateY(46px)}100%{opacity:0;transform:translateY(56px)}}
+.glitch{animation:glitch .9s steps(2) infinite;}
+@keyframes glitch{0%,100%{transform:translate(0);filter:none}25%{transform:translate(-2px,1px);filter:hue-rotate(90deg)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-1px);filter:saturate(2)}}
+.illo-stars{font-size:14px;letter-spacing:1px;animation:starPop 1.6s ease-in-out infinite;}
+@keyframes starPop{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.25);opacity:1}}
+
+/* ===== 第三幕 五道关翻卡 ===== */
+.hurdle-flip-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:22px;width:100%;}
+.hurdle-card{grid-column:span 2;perspective:1100px;height:300px;cursor:pointer;}
+.hurdle-card:nth-child(4){grid-column:2/span 2;}
+@media(max-width:900px){.hurdle-flip-grid{grid-template-columns:repeat(2,1fr);} .hurdle-card,.hurdle-card:nth-child(4){grid-column:auto;}}
+@media(max-width:560px){.hurdle-flip-grid{grid-template-columns:1fr;}}
+.hurdle-card .flip-inner{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.1,.2,1);transform-style:preserve-3d;}
+.hurdle-card.flipped .flip-inner{transform:rotateY(180deg);}
+.hurdle-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;padding:20px;display:flex;flex-direction:column;}
+.hurdle-front{background:var(--white);border:2.5px solid var(--orange);align-items:center;justify-content:center;text-align:center;}
+.hurdle-front .hgate{background:var(--orange);color:#fff;font-weight:900;font-size:13px;padding:4px 16px;border-radius:999px;margin-bottom:12px;}
+.hurdle-front .hname{font-size:22px;font-weight:900;color:var(--orange);line-height:1.4;}
+.hurdle-front .hhint{margin-top:14px;font-size:12.5px;color:var(--ink2);font-weight:800;}
+.hurdle-back{background:linear-gradient(160deg,var(--orange),#B85E01);color:#fff;transform:rotateY(180deg);border:2.5px solid #8F4A00;}
+.hurdle-back p{font-size:13.5px;font-weight:600;line-height:1.75;}
+
+/* ===== 第四幕 ===== */
+.acc-item{background:var(--white);border:2px solid var(--peach);border-radius:20px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 0 rgba(217,113,1,.1);}
+.acc-head{
+  display:flex;align-items:center;gap:14px;padding:18px 20px;cursor:pointer;user-select:none;
+}
+.acc-head .acc-no{background:linear-gradient(120deg,var(--orange),var(--gold));color:#fff;min-width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;flex-shrink:0;}
+.acc-head .acc-title{font-size:20px;font-weight:900;color:var(--ink);}
+.acc-head .acc-arrow{margin-left:auto;color:var(--orange);font-size:22px;font-weight:900;transition:transform .35s;}
+.acc-item.open .acc-arrow{transform:rotate(90deg);}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .45s ease;}
+.acc-body-in{padding:0 20px 20px 80px;}
+@media(max-width:600px){.acc-body-in{padding-left:20px;}}
+.sub-item{margin-bottom:14px;}
+.sub-item .sub-title{font-size:17px;font-weight:900;color:var(--orange);}
+.sub-item p{font-size:15px;}
+.sub-item b{color:var(--orange);}
+
+/* 冷静三秒 */
+.calm-card{background:linear-gradient(140deg,var(--cream),var(--apricot));border:3px dashed var(--orange);border-radius:24px;padding:22px;text-align:center;margin-top:22px;}
+.calm-btn{
+  margin-top:18px;width:200px;height:200px;border-radius:50%;border:6px solid #fff;
+  background:conic-gradient(var(--orange) calc(var(--p,0)*1%), var(--peach) 0);
+  font-size:22px;font-weight:900;color:#fff;cursor:pointer;font-family:inherit;
+  box-shadow:0 10px 24px rgba(217,113,1,.35);transition:transform .15s;position:relative;
+}
+.calm-btn:active{transform:scale(.96);}
+.calm-tip{min-height:30px;margin-top:16px;font-size:18px;font-weight:900;color:var(--orange);}
+
+/* 测验 */
+.quiz-q{background:var(--white);border:2px solid var(--peach);border-radius:18px;padding:14px 18px;margin-bottom:10px;}
+.quiz-q .q-text{font-size:18px;font-weight:900;margin-bottom:12px;}
+.quiz-q .q-text .q-no{color:var(--orange);}
+.quiz-opts{display:flex;gap:12px;flex-wrap:wrap;}
+.quiz-opt{
+  border:2px solid var(--orange);background:var(--cream);color:var(--ink);border-radius:999px;
+  padding:8px 24px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.quiz-opt:hover{background:var(--peach);}
+.quiz-opt.right{background:#2E9E5B;border-color:#2E9E5B;color:#fff;}
+.quiz-opt.wrong{background:#C62F2F;border-color:#C62F2F;color:#fff;animation:shake .4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.quiz-fb{font-size:14.5px;font-weight:700;margin-top:10px;display:none;}
+.quiz-fb.show{display:block;animation:popIn .4s;}
+
+/* 法律表格 */
+.law-table{width:100%;border-collapse:separate;border-spacing:0;background:var(--white);border-radius:18px;overflow:hidden;border:2px solid var(--peach);}
+.law-table th{background:var(--orange);color:#fff;font-size:16px;padding:13px 14px;text-align:left;}
+.law-table td{padding:13px 14px;font-size:14px;border-top:2px solid var(--cream);vertical-align:top;line-height:1.65;}
+.law-table tr:nth-child(even) td{background:#FFFBF3;}
+.law-name{font-weight:900;color:var(--orange);white-space:nowrap;}
+@media(max-width:640px){.law-table th,.law-table td{display:block;width:100%;} .law-name{white-space:normal;}}
+
+/* 流程 */
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;justify-content:center;margin-top:12px;}
+.flow .step{background:var(--orange);color:#fff;font-weight:900;font-size:13px;padding:7px 14px;border-radius:999px;white-space:nowrap;}
+.flow .step.alt{background:var(--gold);color:#5B3A1A;}
+.flow .arrow{color:var(--orange);font-size:16px;font-weight:900;}
+
+/* 总结 */
+.final-band{background:linear-gradient(150deg,var(--orange),#B85E01);color:#fff;border-radius:26px;padding:26px 26px;box-shadow:0 8px 0 #7A3E00;}
+.final-band .mega{color:#FFE9B8;text-align:center;}
+.final-band p{font-size:16.5px;font-weight:600;margin-top:16px;line-height:1.9;text-indent:2em;}
+.final-line{margin-top:22px;background:rgba(255,255,255,.15);border-radius:16px;padding:16px 20px;font-size:18px;font-weight:900;text-align:center;}
+footer{text-align:center;padding:40px 0 60px;color:var(--ink2);font-weight:700;}
+footer .path{display:inline-flex;gap:8px;align-items:center;background:var(--white);border:2px solid var(--peach);padding:10px 22px;border-radius:999px;margin-top:10px;font-size:15px;}
+</style>
+</head>
+
+<body>
+
+<!-- ===== 顶部工具条 ===== -->
+
+
+<!-- ===== 首屏 ===== -->
+<header class="hero">
+  <span class="sparkle" style="top:12%;left:8%;">✦</span>
+  <span class="sparkle" style="top:20%;right:10%;animation-delay:2s;">✦</span>
+  <span class="sparkle" style="bottom:18%;left:14%;animation-delay:4s;">✦</span>
+  <span class="sparkle" style="bottom:24%;right:16%;animation-delay:1s;">✦</span>
+  <div class="hero-badge" data-eid="badge">看懂套路 · 学会保护自己</div>
+  <h1 data-eid="title">算法＋直播间，<br>怎么让你<span class="hl">忍不住下单</span>？</h1>
+  <div class="hero-sub" data-eid="subtitle">情绪只需要一瞬，支付可以慢一步</div>
+  <div class="hero-phone rv">
+    <div class="screen">
+      <div class="live-top"><span>● 直播中</span><span>👀 10万+</span></div>
+      <div class="live-avatar">🎙️
+        <span class="live-tag t1">全网最低价</span>
+        <span class="live-tag t2">限时秒杀</span>
+      </div>
+      <div class="bubble-float b1">主播自用款！</div>
+      <div class="bubble-float b2">最后30单！</div>
+      <div class="bubble-float b3">错过等一年！</div>
+      <div class="live-top"><span>💬 3、2、1，上链接！</span><span>🛒</span></div>
+    </div>
+  </div>
+  <div class="scroll-tip">▼ 往下翻，看看算法怎么一步步套路你</div>
+</header>
+
+<!-- ================= 第一幕 ================= -->
+<section>
+  <div class="wrap">
+    <div class="act-head rv">
+      <div class="act-num">第一幕</div>
+      <h2 data-eid="a1t">深夜，算法盯上了你</h2>
+      <p>你的每一次点开、浏览、停留、搜索，它都悄悄记下来</p>
+    </div>
+
+    <div class="grid2">
+      <div class="card rv">
+        <div class="card-title">🗣 情景 ① 随口一句话</div>
+        <div class="say" data-eid="a1s1"><span class="who">深夜刷手机的你：</span>在社交平台上提到最近想换个水杯。</div>
+        <p data-eid="a1s1p">只是随口一提，接下来打开<span class="big">所有购物软件</span>，首页全是不同品牌水杯的推送——</p>
+        <button class="press-btn mt" id="btnAds" onclick="showAds()">点开购物软件看看 →</button>
+      </div>
+      <div class="phone-stage rv">
+        <div class="mini-phone">
+          <div class="scr">
+            <div class="scr-head">🛍 猜你喜欢</div>
+            <div class="ad-item js-hide"><span class="ad-emoji">🥤</span><span class="ad-txt">保温杯大容量<em class="ad-tag hot">全网销量TOP1</em></span></div>
+            <div class="ad-item js-hide"><span class="ad-emoji">☕</span><span class="ad-txt">咖啡随行杯<em class="ad-tag">家居好物</em></span></div>
+            <div class="ad-item js-hide"><span class="ad-emoji">🍼</span><span class="ad-txt">高颜值吸管杯<em class="ad-tag hot">必买清单</em></span></div>
+            <div class="ad-item js-hide"><span class="ad-emoji">⏰</span><span class="ad-txt">智能显温杯<em class="ad-tag danger">限时秒杀</em></span></div>
+            <div class="ad-item js-hide"><span class="ad-emoji">🎁</span><span class="ad-txt">礼盒装保温杯<em class="ad-tag danger">错过等一年</em></span></div>
+          </div>
+        </div>
+        <div class="hint" style="font-size:13px;color:var(--ink2);font-weight:700;" data-eid="a1hint">👉 点橙色按钮，看看推送给你的东西</div>
+      </div>
+    </div>
+
+    <div class="mt rv">
+      <div class="card-title">🎯 情景 ② 面临焦虑的时候</div>
+      <p data-eid="a1s2p" style="font-weight:700;margin-bottom:12px;">身份焦虑、容貌焦虑、职场焦虑……算法立刻<span class="big">定制推送</span>，直击软肋。点一点：</p>
+      <div class="grid3">
+        <div class="card anx-card" onclick="revealAnx(this)">
+          <div class="anx-face">👔</div>
+          <div class="anx-name">职场新人</div>
+          <div class="anx-sub">点我看看算法推什么</div>
+          <div class="anx-reveal js-hide"><span class="from">推送 ▸</span>「职场新人必备十件好物，帮你快速获得同事好感」</div>
+        </div>
+        <div class="card anx-card" onclick="revealAnx(this)">
+          <div class="anx-face">🧴</div>
+          <div class="anx-name">在意皮肤状态的女生</div>
+          <div class="anx-sub">点我看看算法推什么</div>
+          <div class="anx-reveal js-hide"><span class="from">推送 ▸</span>「同龄人都在用的抗老精华，再不买就比别人老了三岁」</div>
+        </div>
+        <div class="card anx-card" onclick="revealAnx(this)">
+          <div class="anx-face">🏠</div>
+          <div class="anx-name">独居的年轻人</div>
+          <div class="anx-sub">点我看看算法推什么</div>
+          <div class="anx-reveal js-hide"><span class="from">推送 ▸</span>「提升幸福感的居家神器，少一件都不算好好生活」</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-band rv">
+      <div class="big" data-eid="a1sum">你每一次点开、浏览、停留、搜索，算法都悄悄记下来，给你画像、贴上标签。</div>
+      <p data-eid="a1sum2">下一步，它自动精准给你推送「必买清单」「限时秒杀」「错过等一年」「再不买就晚了」的弹窗和各种直播间。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 第二幕 ================= -->
+<section>
+  <div class="wrap">
+    <div class="act-head rv">
+      <div class="act-num">第二幕</div>
+      <h2 data-eid="a2t">直播间里，套路诱你下单</h2>
+      <p>话术负责让你来不及想 —— 点开卡片，看看每句话背后的真相</p>
+    </div>
+    <div class="flip-grid">
+
+      <div class="flip-card rv" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <span class="trick-no">套路 1</span>
+            <div class="trick-name" data-eid="t1n">夸大功效 · 虚假背书</div>
+            <div class="illo"><span class="illo-emoji bob">🏥</span><span class="illo-arrow">＋</span><span class="doc">📜<em class="stamp">假</em></span></div>
+            <div class="trick-quote" data-eid="t1q">「三甲医院推荐」「航天员同款」「降压药降糖药别再吃了！一杯羊奶替代所有保健品、药品！」</div>
+            <div class="flip-hint">👆 点击翻面看真相</div>
+          </div>
+          <div class="flip-face flip-back">
+            <div class="truth-title">⚠️ 话术陷阱</div>
+            <p data-eid="t1b">主播夸大商品功效，伪造权威背书，甚至用 AI 生成假检测报告；将普通食品包装，<b>精准收割中老年群体的健康焦虑</b>。</p>
+            <span class="truth-tag">对策：绝对化宣传一律存疑</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card rv" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <span class="trick-no">套路 2</span>
+            <div class="trick-name" data-eid="t2n">货不对板 · 以次充好</div>
+            <div class="illo"><span class="illo-emoji shine">🧥</span><span class="illo-arrow">➜</span><span class="illo-emoji rag">🧥</span></div>
+            <div class="trick-quote" data-eid="t2q">「这件大衣纯羊毛制作。」「这个手机百分百正品。」</div>
+            <div class="flip-hint">👆 点击翻面看真相</div>
+          </div>
+          <div class="flip-face flip-back">
+            <div class="truth-title">⚠️ 所见非所得</div>
+            <p data-eid="t2b">直播间展示的是「精品」，<b>发货的却是化纤大衣、翻新机、发霉变质食品</b>等。</p>
+            <span class="truth-tag">对策：先验货，后签收</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card rv" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <span class="trick-no">套路 3</span>
+            <div class="trick-name" data-eid="t3n">价格欺诈 · 诱导下单</div>
+            <div class="illo"><span class="price-old">599</span><span class="illo-arrow">➜</span><span class="price-now">59</span><span class="illo-emoji">⏰</span></div>
+            <div class="trick-quote" data-eid="t3q">「专柜599元，今天宠粉价59元，手慢无！」「地板价」「骨折价」</div>
+            <div class="flip-hint">👆 点击翻面看真相</div>
+          </div>
+          <div class="flip-face flip-back">
+            <div class="truth-title">⚠️ 最低价套路</div>
+            <p data-eid="t3b">利用「全网最低价」「最后30单」「倒计时逼单」制造紧张氛围，<b>甚至隐藏退换货限制条款</b>，诱导冲动消费。</p>
+            <span class="truth-tag">对策：多平台比价，不信秒杀</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card rv" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <span class="trick-no">套路 4</span>
+            <div class="trick-name" data-eid="t4n">情感PUA · 剧本卖惨</div>
+            <div class="illo"><span class="illo-emoji" style="font-size:34px;">🎬</span><span class="illo-emoji mask">🎭</span><span class="tear" style="left:52%;">💧</span></div>
+            <div class="trick-quote" data-eid="t4q">「我自小住在山沟，父母双亡受尽欺凌……支持下家乡土特产就是最大的爱心。」</div>
+            <div class="flip-hint">👆 点击翻面看真相</div>
+          </div>
+          <div class="flip-face flip-back">
+            <div class="truth-title">⚠️ 欺诈性营销</div>
+            <p data-eid="t4b">编造婆媳矛盾、破产、寻母等夸张情节，演绎家庭纠纷博取同情，本质上是<b>利用消费者的善意进行欺诈</b>。</p>
+            <span class="truth-tag">对策：分清表演与质量</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card rv" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="flip-face flip-front">
+            <span class="trick-no">套路 5</span>
+            <div class="trick-name" data-eid="t5n">AI虚拟主播 · 数据造假</div>
+            <div class="illo"><span class="illo-emoji glitch">👤</span><span class="illo-arrow">⇄</span><span class="illo-emoji bob" style="animation-delay:.4s;">🤖</span><span class="illo-stars">⭐⭐⭐</span></div>
+            <div class="trick-quote" data-eid="t5q">「明星都在用」「10万人在线疯抢」「好评如潮」</div>
+            <div class="flip-hint">👆 点击翻面看真相</div>
+          </div>
+          <div class="flip-face flip-back">
+            <div class="truth-title">⚠️ 新型隐蔽侵权</div>
+            <p data-eid="t5b">利用 <b>AI换脸伪造明星代言</b>，或使用虚拟主播带货；刷观看人数、好评、销量，制造「爆款」假象。</p>
+            <span class="truth-tag">对策：看差评与追评</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= 第三幕 ================= -->
+<section>
+  <div class="wrap">
+    <div class="act-head rv">
+      <div class="act-num">第三幕</div>
+      <h2 data-eid="a3t">想自保时，才发现已经晚了</h2>
+    </div>
+    <div class="late-hero rv">
+      <div class="mega" data-eid="a3m">算法负责「<span class="hl">让你一直想看</span>」，<br>话术负责「<span class="hl">让你来不及想</span>」。</div>
+      <p data-eid="a3p">信息流的轰炸下，不知不觉买了一堆原本不需要的商品，拆开快递的瞬间才惊觉自己又掉进了消费圈套。</p>
+    </div>
+    <div class="box-stage rv">
+      <p class="big center" data-eid="a3b">情绪触发只需一瞬，事后维权却要跨过<span style="color:#C62F2F;">五道关</span>。点开快递箱看看 👇</p>
+      <div class="parcel" id="parcel" onclick="openParcel(this)">
+        <div class="lid"></div>
+        <div class="tape"></div>
+        <div class="label">📦 冲动消费包裹</div>
+        <div class="inside">💸🧾😵</div>
+      </div>
+      <div class="hurdle-flip-grid" id="hurdles">
+      <div class="hurdle-card js-hide" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="hurdle-face hurdle-front">
+            <span class="hgate">第1关</span>
+            <div class="hname">证据链容易断裂</div>
+            <div class="hhint">👆 点开看看为什么难</div>
+          </div>
+          <div class="hurdle-face hurdle-back">
+            <p data-eid="h1">宣传多为口头表述、剧本演绎转瞬即逝，直播回放易被删改，消费者难留证据。</p>
+          </div>
+        </div>
+      </div>
+      <div class="hurdle-card js-hide" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="hurdle-face hurdle-front">
+            <span class="hgate">第2关</span>
+            <div class="hname">责任主体互相推诿</div>
+            <div class="hhint">👆 点开看看为什么难</div>
+          </div>
+          <div class="hurdle-face hurdle-back">
+            <p data-eid="h2">责任主体模糊，运营方、技术方、商家互相推诿，且AI内容生成快、删除快，溯源和取证难度极大。</p>
+          </div>
+        </div>
+      </div>
+      <div class="hurdle-card js-hide" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="hurdle-face hurdle-front">
+            <span class="hgate">第3关</span>
+            <div class="hname">因果关系难证明</div>
+            <div class="hhint">👆 点开看看为什么难</div>
+          </div>
+          <div class="hurdle-face hurdle-back">
+            <p data-eid="h3">健康类产品因个体差异大，消费者极难直接证明“宣传功效与实际效果不符”。常因“证据不足”维权失败。</p>
+          </div>
+        </div>
+      </div>
+      <div class="hurdle-card js-hide" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="hurdle-face hurdle-front">
+            <span class="hgate">第4关</span>
+            <div class="hname">价格难举证</div>
+            <div class="hhint">👆 点开看看为什么难</div>
+          </div>
+          <div class="hurdle-face hurdle-back">
+            <p data-eid="h4">对于“全网最低价”的套路，多平台、多时段的价格数据难举证。消费者难以证明“最低价”为假，且容易错过退款窗口期。</p>
+          </div>
+        </div>
+      </div>
+      <div class="hurdle-card js-hide" onclick="flipCard(this)">
+        <div class="flip-inner">
+          <div class="hurdle-face hurdle-front">
+            <span class="hgate">第5关</span>
+            <div class="hname">退货门槛高</div>
+            <div class="hhint">👆 点开看看为什么难</div>
+          </div>
+          <div class="hurdle-face hurdle-back">
+            <p data-eid="h5">商家用“盲盒不退换”“灯光色差”“运输损耗”“拍摄角度”推诿，部分平台退货要求自担高额运费。</p>
+          </div>
+        </div>
+      </div>
+      </div>
+      <p class="center" style="font-weight:800;color:var(--ink2);" data-eid="a3e">多数消费者在冲动消费的那一刻，就已经错过了最佳自我保护窗口。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 第四幕 ================= -->
+<section>
+  <div class="wrap">
+    <div class="act-head rv">
+      <div class="act-num">第四幕</div>
+      <h2 data-eid="a4t">下一次，让支付比情绪慢一步</h2>
+      <p>事前防范 → 事中应对 → 事后维权 · 七步自保指南，点开逐条查看</p>
+    </div>
+
+    <!-- 1 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">一</span><span class="acc-title" data-eid="g1t">跳出信息茧房</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">🚪 物理隔离诱惑</div><p data-eid="g11">减少点开直播购物软件，或把直播购物 APP <b>藏进手机最深处</b>，避免闲下来就习惯性点开刷推荐。</p></div>
+        <div class="sub-item"><div class="sub-title">🔀 改变浏览习惯</div><p data-eid="g12">看到好物推荐或直播间<b>不要长时间停留</b>；有意识地多搜索浏览非消费类内容（书籍、健身、风景），稀释带货推送的占比。</p></div>
+        <div class="sub-item"><div class="sub-title">🧹 清理算法标签</div><p data-eid="g13">关闭不必要的个性化推荐；定期清理浏览历史；<b>不随便授权</b>平台获取个人信息；长按焦虑类带货直播间或账号，选择「不感兴趣」。</p></div>
+      </div></div>
+    </div>
+
+    <!-- 2 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">二</span><span class="acc-title" data-eid="g2t">把好交易入口</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">🏪 选择正规平台</div><p data-eid="g21">优先选择<b>资质完备、口碑良好、监管规范的大型正规平台</b>；不点击陌生链接，不进非正规私人直播间下单。</p></div>
+        <div class="sub-item"><div class="sub-title">📋 核验商家资质</div><p data-eid="g22">下单前查看商家<b>营业执照、经营许可</b>；陌生品牌可通过「国家企业信用信息公示系统」查询处罚或经营异常信息。</p></div>
+        <div class="sub-item"><div class="sub-title">🚫 拒绝私下交易</div><p data-eid="g23">坚决不脱离平台私下交易（微信、QQ 转账、私发链接付款），防止<b>收款不发货、售后失联</b>。</p></div>
+        <div class="sub-item"><div class="sub-title">🔐 保护个人信息</div><p data-eid="g24">不随意泄露银行卡信息、短信验证码，<b>不扫来源不明的二维码</b>。</p></div>
+      </div></div>
+    </div>
+
+    <!-- 3 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">三</span><span class="acc-title" data-eid="g3t">建立理性标尺</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">📝 列出刚需消费清单（事前过滤）</div><p data-eid="g31">列出实实在在的必需品，清单之外一律视为非刚需。非刚需商品放入购物车「冷静三天」——三天后复盘，通常一半以上的购买欲已经消失。</p></div>
+        <div class="sub-item"><div class="sub-title">💰 设定个人财务底线（资金管控）</div><p data-eid="g32">消费额度控制在<b>当月工资的三分之一以内</b>；绝不动用应急积蓄，更不为买东西触碰超出还款能力的信贷产品。</p></div>
+        <div class="sub-item"><div class="sub-title">📊 衡量商品使用频次（价值评估）</div><p data-eid="g33">买前问自己：这件东西一年能用几次？<b>一年用不到三次（空气炸锅、破壁机等），无论折扣多大都不买</b>——平摊下来每次使用成本可能比买新的还贵。</p></div>
+        <div class="sub-item"><div class="sub-title">⏳ 换算商品时薪成本（成本感知）</div><p data-eid="g34"><b>时薪等价法</b>：300 元的衣服 ÷ 30 元时薪 = 你要辛苦工作 <b>10 小时</b>才能换取。具象化劳动代价，能消减大半冲动消费的念头。</p></div>
+      </div></div>
+    </div>
+
+    <!-- 4 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">四</span><span class="acc-title" data-eid="g4t">识破营销套路</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">🏷 警惕价格陷阱</div><p data-eid="g41">不轻信「全网最低价」「限量秒杀」「最后库存」，防范<b>先涨价再打折</b>；多平台比价，多参考不同渠道评价。</p></div>
+        <div class="sub-item"><div class="sub-title">🙅 不信绝对承诺</div><p data-eid="g42">对「百分百正品」「包治百病」等绝对化、夸大宣传保持警惕，<b>要求出示商品检测报告、授权证书</b>。</p></div>
+        <div class="sub-item"><div class="sub-title">🎭 辨别情感与剧本营销</div><p data-eid="g43">分清直播表演与商品质量，<b>不被虚假滞销、卖惨剧情、虚假PK</b>裹挟而冲动下单。</p></div>
+        <div class="sub-item"><div class="sub-title">🪤 远离低价诱惑</div><p data-eid="g44">警惕远低于市场正常价格的商品（防假冒伪劣、残次翻新）；警惕「0元抢」「免费领」，防<b>隐形扣费或信息泄露</b>。</p></div>
+        <div class="sub-item"><div class="sub-title">🤖 识别刷单假象</div><p data-eid="g45">细看商品详情参数与<b>真实评价（尤其是差评与追评）</b>，不盲从直播间的高好评和虚高销量。</p></div>
+      </div></div>
+    </div>
+
+    <!-- 5 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">五</span><span class="acc-title" data-eid="g5t">把握商品质量</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">🔍 细看商品信息</div><p data-eid="g51">不要单凭直播滤镜画面下单，<b>仔细阅读商品参数、材质、售后说明</b>。</p></div>
+        <div class="sub-item"><div class="sub-title">🧾 特殊商品核查</div>
+          <p data-eid="g52"><b>保健食品：</b>认准包装上的「蓝帽子」标志，核对注册号/备案号及适宜人群，防虚假夸大宣传。</p>
+          <p class="mt" data-eid="g53"><b>跨境电商商品：</b>了解我国「正面清单」管理，注意原产地标准可能与国内不同；购买进口食品、化妆品务必核验<b>中文标签、报关单、检疫证明</b>。</p>
+          <p class="mt" data-eid="g54"><b>食品 / 化妆品 / 医疗器械：</b>仔细核对批准文号、生产资质、保质期，<b>拒绝三无、过期产品</b>。</p>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 6 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">六</span><span class="acc-title" data-eid="g6t">锁定证据链条</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">📦 规范验货签收</div><p data-eid="g61">坚持<b>「先验货，后签收」</b>：核对服装材质尺寸、电子产品防伪码、食品保质期。发现货不对板、破损，第一时间拍照录像固定证据；易碎、贵重物品建议<b>录像开箱</b>。</p></div>
+        <div class="sub-item"><div class="sub-title">🗂 留存完整凭证</div><p data-eid="g62">用平台录屏功能保存商品宣传全过程（重点记录质量承诺、售后）；妥善保存订单详情、支付凭证、物流信息、文字聊天记录，<b>电话沟通应录音</b>。</p></div>
+      </div></div>
+    </div>
+
+    <!-- 7 -->
+    <div class="acc-item rv">
+      <div class="acc-head" onclick="toggleAcc(this)"><span class="acc-no">七</span><span class="acc-title" data-eid="g7t">依法积极维权</span><span class="acc-arrow">▶</span></div>
+      <div class="acc-body"><div class="acc-body-in">
+        <div class="sub-item"><div class="sub-title">✍️ 书面留存证据</div><p data-eid="g71">退换货、保修、价保等一切权益，<b>以平台和商家书面公示为准</b>；主播口头承诺必须通过聊天记录截图确认留存。</p></div>
+        <div class="sub-item"><div class="sub-title">⚖️ 主张法定权利</div><p data-eid="g72">除定作、鲜活易腐等特殊商品外，网购商品均享有<b>七日无理由退货权</b>；商家设置「不退不换」等霸王条款，可依法主张权益。</p></div>
+        <div class="sub-item"><div class="sub-title">📞 维权途径</div>
+          <p data-eid="g73">质量问题或拒退拖延 → 先与<b>商家协商</b>，或走<b>平台维权通道</b>发起售后。</p>
+          <p class="mt" data-eid="g74">虚假宣传或欺诈 → 拨打 <b>12345</b> 政务服务便民热线、<b>12315</b> 投诉举报热线，或通过<b>全国12315平台、智慧315平台</b>投诉。</p>
+          <p class="mt" data-eid="g75">涉嫌刑事犯罪（金额较大）→ 向<b>公安机关报案</b>并提交证据，必要时向<b>人民法院提起诉讼</b>。</p>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 冷静三秒 -->
+    <div class="calm-card rv">
+      <div class="mega" data-eid="calmT">🧊 冲动上头时，先<span style="color:var(--orange);">按住 3 秒</span></div>
+      <button class="calm-btn" id="calmBtn">按住我<br>冷静3秒</button>
+      <div class="calm-tip" id="calmTip">付款前，问自己几个问题——</div>
+    </div>
+
+    <!-- 自测 -->
+    <div class="mt rv">
+      <div class="card-title">🧠 套路识别自测 · 你能全对吗？</div>
+      <div class="quiz-q" data-ans="1">
+        <div class="q-text"><span class="q-no">Q1 ·</span><span data-eid="q1">网购商品一律享有七日无理由退货权，对吗？</span></div>
+        <div class="quiz-opts"><button class="quiz-opt" onclick="answer(this,true)">对</button><button class="quiz-opt" onclick="answer(this,false)">错</button></div>
+        <div class="quiz-fb" data-eid="q1f">✅ 除定作、鲜活易腐等特殊商品外，网购商品均享有七日无理由退货权。</div>
+      </div>
+      <div class="quiz-q" data-ans="1">
+        <div class="q-text"><span class="q-no">Q2 ·</span><span data-eid="q2">商家存在欺诈行为，消费者可要求退一赔三；赔偿不足500元的，按500元算，对吗？</span></div>
+        <div class="quiz-opts"><button class="quiz-opt" onclick="answer(this,true)">对</button><button class="quiz-opt" onclick="answer(this,false)">错</button></div>
+        <div class="quiz-fb" data-eid="q2f">✅ 《消费者权益保护法》第五十五条：欺诈可要求退一赔三，不足500元按500元计算。</div>
+      </div>
+      <div class="quiz-q" data-ans="0">
+        <div class="q-text"><span class="q-no">Q3 ·</span><span data-eid="q3">主播口头承诺的福利，听到了就算数，对吗？</span></div>
+        <div class="quiz-opts"><button class="quiz-opt" onclick="answer(this,false)">对</button><button class="quiz-opt" onclick="answer(this,true)">错</button></div>
+        <div class="quiz-fb" data-eid="q3f">❌ 口头承诺必须通过聊天记录截图确认留存，一切以平台和商家书面公示为准。</div>
+      </div>
+      <div class="quiz-q" data-ans="1">
+        <div class="q-text"><span class="q-no">Q4 ·</span><span data-eid="q4">遇到虚假宣传，可以拨打12315投诉举报，对吗？</span></div>
+        <div class="quiz-opts"><button class="quiz-opt" onclick="answer(this,true)">对</button><button class="quiz-opt" onclick="answer(this,false)">错</button></div>
+        <div class="quiz-fb" data-eid="q4f">✅ 遭遇虚假宣传或欺诈，可拨打12345政务服务便民热线、12315投诉举报热线，或通过全国12315平台、智慧315平台投诉。</div>
+      </div>
+      <div class="quiz-q" data-ans="0">
+        <div class="q-text"><span class="q-no">Q5 ·</span><span data-eid="q5">看到「0元抢」「免费领」，放心参加就对了，对吗？</span></div>
+        <div class="quiz-opts"><button class="quiz-opt" onclick="answer(this,false)">对</button><button class="quiz-opt" onclick="answer(this,true)">错</button></div>
+        <div class="quiz-fb" data-eid="q5f">❌ 警惕「0元抢」「免费领」等活动，防隐形扣费或信息泄露。</div>
+      </div>
+    </div>
+
+    <!-- 法律表格 -->
+    <div class="mt rv">
+      <div class="card-title">📜 这些法律，是你的底气（条文原文）</div>
+      <table class="law-table">
+        <tr><th style="width:32%;">法规名称</th><th>核心要点</th></tr>
+        <tr><td class="law-name" data-eid="l1">《消费者权益保护法》第五十五条</td><td data-eid="l1b">如果商家存在欺诈行为，消费者可以要求退一赔三，赔偿金额不足五百元的，按五百元计算。</td></tr>
+        <tr><td class="law-name" data-eid="l2">《电子商务法》第十七条</td><td data-eid="l2b">电子商务经营者应当全面、真实、准确、及时地披露商品或者服务信息，保障消费者的知情权和选择权。</td></tr>
+        <tr><td class="law-name" data-eid="l3">《最高人民法院关于适用〈中华人民共和国民法典〉总则编若干问题的解释》第二十一条</td><td data-eid="l3b">故意告知虚假情况或者负有告知义务的人故意隐瞒真实情况，致使当事人基于错误认识作出意思表示的，人民法院可以认定为民法典第一百四十八条、第一百四十九条规定的欺诈。</td></tr>
+        <tr><td class="law-name" data-eid="l4">《直播电商监督管理办法》第三十四条</td><td data-eid="l4b">直播间运营者、直播营销人员不得对商品或服务的经营主体、性能、功能、质量、销售情况、用户评价、曾获荣誉、资格资质等作虚假或者引人误解的商业宣传，欺骗、误导消费者。</td></tr>
+        <tr><td class="law-name" data-eid="l5">《消费者权益保护法》第四十四条</td><td data-eid="l5b">消费者通过网络交易平台购买商品或者服务，其合法权益受到损害的，可以向销售者或者服务者要求赔偿。网络交易平台提供者不能提供销售者或者服务者的真实名称、地址和有效联系方式的，消费者也可以向网络交易平台提供者要求赔偿。</td></tr>
+        <tr><td class="law-name" data-eid="l6">《电子商务法》第三十八条</td><td data-eid="l6b">电子商务平台经营者知道或者应当知道平台内经营者销售的商品或者提供的服务不符合保障人身、财产安全的要求，或者有其他侵害消费者合法权益行为，未采取必要措施的，依法与该平台内经营者承担连带责任。</td></tr>
+        <tr><td class="law-name" data-eid="l7">《广告法》第二十八条</td><td data-eid="l7b">广告以虚假或者引人误解的内容欺骗、误导消费者的，构成虚假广告。发布了虚假广告，广告主依法承担民事责任，广告代言人明知或者应知广告虚假仍设计、制作、代理、发布的，应当与广告主承担连带责任。</td></tr>
+        <tr><td class="law-name" data-eid="l8">《网络直播营销管理办法（试行）》第十九条</td><td data-eid="l8b">直播营销平台应当建立健全投诉举报机制，公示投诉举报方式，简化投诉举报程序，保障消费者能够及时、便捷地反映问题。对于消费者投诉，应当及时处理，积极协助消费者维护合法权益。</td></tr>
+      </table>
+    </div>
+
+    <!-- 维权流程 -->
+    <div class="card mt rv" style="text-align:center;">
+      <div class="card-title" style="justify-content:center;">🛡 维权流程</div>
+      <div class="flow" data-eid="flow">
+        <span class="step">与商家协商</span><span class="arrow">➜</span>
+        <span class="step alt">向平台投诉</span><span class="arrow">➜</span>
+        <span class="step">12345 / 12315 · 全国12315平台 · 智慧315</span><span class="arrow">➜</span>
+        <span class="step alt">必要时向人民法院起诉</span>
+      </div>
+    </div>
+
+    <!-- 总结 -->
+    <div class="final-band mt rv">
+      <div class="mega" data-eid="f1">真正的消费自由，不是想买什么就买什么，而是<span style="color:#FFE9B8;">能够自主决定要不要买</span>。</div>
+      <p data-eid="f2">作为消费者，我们要保持理性：拒绝为套路营销买单，不因算法诱导冲动消费，回归商品本身。冲动消费不仅浪费钱，还会让你陷入「买的时候开心，收到货空虚」的恶性循环。守住自己的判断，从被算法控制的被动状态里走出来，夺回消费的选择权和主导权。</p>
+      <p data-eid="f3">而要让直播带货真正成为值得信赖的消费场景，需要各方形成合力：消费者要理性，警惕套路、留证维权；经营者要守正，合法合规、如实宣传；平台要尽责，严审资质、优化售后；监管者要发力，完善法规、铁腕执法。</p>
+      <div class="final-line" data-eid="f4">下一次付款前，让支付比情绪慢一步。🧊</div>
+    </div>
+  </div>
+</section>
+
+
+
+<script>
+/* ===== 入场动画 ===== */
+var io = new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target); }
+  });
+},{threshold:.12});
+document.querySelectorAll('.rv').forEach(function(el){ io.observe(el); });
+
+/* ===== 第一幕：广告涌现 ===== */
+function showAds(){
+  var btn = document.getElementById('btnAds');
+  var ads = document.querySelectorAll('.mini-phone .ad-item');
+  ads.forEach(function(ad,i){
+    setTimeout(function(){
+      ad.classList.remove('js-hide');
+      ad.classList.add('js-shown','pop-in');
+    }, i*380);
+  });
+  btn.textContent = '👀 全是水杯推送……';
+  btn.classList.add('done');
+  btn.disabled = true;
+}
+function revealAnx(card){
+  var r = card.querySelector('.anx-reveal');
+  r.classList.toggle('js-hide');
+  r.classList.toggle('js-shown','pop-in');
+}
+
+/* ===== 第二幕：翻牌 ===== */
+function flipCard(c){ c.classList.toggle('flipped'); }
+
+/* ===== 第三幕：开包裹 ===== */
+function openParcel(p){
+  p.classList.add('opened');
+  document.querySelectorAll('#hurdles .hurdle-card').forEach(function(h,i){
+    setTimeout(function(){
+      h.classList.remove('js-hide');
+      h.classList.add('js-shown','pop-in');
+    }, 300 + i*260);
+  });
+}
+
+/* ===== 第四幕：手风琴 ===== */
+function toggleAcc(head){
+  var item = head.parentElement, body = item.querySelector('.acc-body');
+  var open = item.classList.toggle('open');
+  body.style.maxHeight = open ? body.scrollHeight + 'px' : '0px';
+}
+
+/* ===== 冷静3秒 ===== */
+(function(){
+  var btn = document.getElementById('calmBtn'), tip = document.getElementById('calmTip');
+  var tips = ['🤔 这件东西一年能用几次？','⏳ 它值你多少小时的工作？','📅 三天后，你还想要它吗？','✅ 冲动已冷却，理性做决定！'];
+  var timer = null, p = 0;
+  function stop(final){
+    clearInterval(timer); timer = null;
+    if(final){ btn.style.setProperty('--p',100); tip.textContent = tips[3];
+      btn.innerHTML = '理性<br>决定✓'; btn.style.background = 'var(--gold)'; btn.style.color = '#5B3A1A'; }
+  }
+  btn.addEventListener('pointerdown', function(){
+    if(btn.dataset.done) return;
+    p = 0;
+    timer = setInterval(function(){
+      p += 100/(30*3);
+      btn.style.setProperty('--p', Math.min(p,100));
+      tip.textContent = tips[Math.min(Math.floor(p/34),2)];
+      if(p >= 100){ stop(true); btn.dataset.done = '1'; }
+    }, 33);
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(function(ev){
+    btn.addEventListener(ev, function(){ if(timer) { stop(false); btn.style.setProperty('--p',0); tip.textContent = '付款前，问自己几个问题——'; } });
+  });
+})();
+
+/* ===== 自测 ===== */
+function answer(btn, isRight){
+  var q = btn.closest('.quiz-q');
+  if(q.dataset.lock) return;
+  q.dataset.lock = '1';
+  var correct = q.dataset.ans === '1';
+  var opts = q.querySelectorAll('.quiz-opt');
+  opts[correct ? 0 : 1].classList.add('right');
+  btn.classList.add(isRight ? 'right' : 'wrong');
+  q.querySelector('.quiz-fb').classList.add('show');
+}
+
+/* ===== 保存 / 导出 ===== */
+</script>
+</body>
+</html>
